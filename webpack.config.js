@@ -1,5 +1,3 @@
-// webpack.config.js
-
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -17,23 +15,34 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.json', '.css'],
-    mainFields: ['module', 'main'],
+    fallback: {
+      "path": require.resolve("path-browserify"),
+      "os": require.resolve("os-browserify/browser"),
+      "crypto": require.resolve("crypto-browserify"),
+      "buffer": require.resolve("buffer/"),
+      "stream": require.resolve("stream-browserify"),
+      "vm": require.resolve("vm-browserify"),
+    },
   },
   module: {
     rules: [
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'], // Handles CSS imports
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.(png|gif|jpg|jpeg|svg|xml|json)$/,
-        type: 'asset/resource', // Handles asset files
+        type: 'asset/resource',
+      },
+      {
+        test: /\.html$/i,
+        loader: 'html-loader',
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/index.html', // Template HTML file
+      template: './src/index.html',
       filename: 'index.html',
     }),
     new CopyWebpackPlugin({
@@ -42,24 +51,27 @@ module.exports = {
         { from: 'node_modules/cesium/Build/Cesium/Assets', to: 'Assets' },
         { from: 'node_modules/cesium/Build/Cesium/Widgets', to: 'Widgets' },
         { from: 'node_modules/cesium/Build/Cesium/ThirdParty', to: 'ThirdParty' },
-        { from: 'src/data', to: 'data' }, // Copy your data files
+        { from: 'src/data', to: 'data' },
       ],
     }),
-    new Dotenv(), // Load environment variables from .env
+    new Dotenv({
+      path: './.env',
+      safe: false,
+    }),
     new webpack.DefinePlugin({
-      CESIUM_BASE_URL: JSON.stringify(''), // Necessary for Cesium to locate assets
+      CESIUM_BASE_URL: JSON.stringify(''),
     }),
   ],
   devServer: {
     static: {
-      directory: path.join(__dirname, 'dist'), // Serve static files from 'dist'
+      directory: path.join(__dirname, 'dist'),
     },
     compress: true,
-    port: 8080, // Change if needed
+    port: 8080,
     hot: true,
     open: true,
   },
-  performance: {
+  performance: {  
     hints: false,
   },
 };

@@ -18,7 +18,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #000000aa;
+  background-color: #000000aa; /* Semi-transparent black */
   color: white;
   display: flex;
   align-items: center;
@@ -27,13 +27,95 @@ body {
   font-size: 2em;
 }
 
-/* Add this to your main.css or style section */
+/* Style for gray overlay */
 #grayOverlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(128, 128, 128, 0.3);
+  background-color: rgba(128, 128, 128, 0.3); /* 30% opacity gray */
   pointer-events: none; /* Allows interaction with Cesium beneath */
+  z-index: 2; /* Ensure it's above the Cesium container but below UI elements */
+  display: none; /* Initially hidden */
+}
+
+/* Show the overlay when active */
+.active-overlay #grayOverlay {
+  display: block;
+}
+
+/* Styles for the toolbar */
+#toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3; /* Above the gray overlay */
+  background: rgba(42, 42, 42, 0.8);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+#toolbar table {
+  color: white;
+  border-collapse: collapse;
+}
+
+#toolbar td {
+  padding: 4px 8px;
+}
+
+#toolbar input[type="range"] {
+  width: 100px;
+}
+
+#toolbar input[type="text"] {
+  width: 60px;
+  margin-left: 5px;
+  text-align: center;
+  border: none;
+  border-radius: 2px;
+  padding: 2px 4px;
+}
+
+/* Styles for coordinates display */
+#coordinatesDisplay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(42, 42, 42, 0.8);
+  padding: 10px;
+  border-radius: 4px;
+  color: white;
+  z-index: 3; /* Above the gray overlay */
+  font-size: 1em;
+  max-width: 300px;
+  line-height: 1.5em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #toolbar {
+    padding: 6px;
+  }
+
+  #coordinatesDisplay {
+    max-width: 90%;
+    font-size: 0.9em;
+  }
+}
+
+/* Optional: Customize scrollbars for better aesthetics */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  border: 3px solid rgba(0, 0, 0, 0);
 }

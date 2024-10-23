@@ -6,8 +6,8 @@ import {
   Cesium3DTileset,
   Ion,
   knockout,
-  SingleTileImageryProvider,
-  Rectangle,
+  Cartographic,
+  Math as CesiumMath,
 } from 'cesium';
 import './css/main.css';
 
@@ -52,11 +52,20 @@ scene.skyAtmosphere.show = true;
     scene.primitives.add(tileset);
 
     // Hide the loading overlay once done
-    document.getElementById('loadingOverlay').style.display = 'none';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'none';
+    }
+
+    // Optionally, show the gray overlay after loading
+    // toggleGrayOverlay(true);
   } catch (error) {
     console.error(`Error loading 3D Tileset.\n${error}`);
     // Optionally display an error message to the user
-    document.getElementById('loadingOverlay').innerHTML = 'Failed to load tileset.';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.innerHTML = 'Failed to load tileset.';
+    }
   }
 })();
 
@@ -83,43 +92,68 @@ for (const name in viewModel) {
   }
 }
 
-// Function to add a gray overlay with 30% opacity using Imagery Layer
-function addGrayOverlay() {
-  // Create a 1x1 pixel canvas with semi-transparent gray color
-  const grayCanvas = document.createElement('canvas');
-  grayCanvas.width = 1;
-  grayCanvas.height = 1;
-  const context = grayCanvas.getContext('2d');
-  context.fillStyle = 'rgba(128, 128, 128, 0.3)'; // Gray color with 30% opacity
-  context.fillRect(0, 0, 1, 1);
-
-  const grayImageryProvider = new SingleTileImageryProvider({
-    url: grayCanvas.toDataURL(),
-    rectangle: Rectangle.MAX_VALUE, // Covers the entire globe
-  });
-
-  // Add the imagery layer
-  const grayImageryLayer = viewer.imageryLayers.addImageryProvider(grayImageryProvider);
-  grayImageryLayer.alpha = 1.0; // Fully apply the opacity from the image
-  grayImageryLayer.brightness = 1.0;
+// Function to toggle the gray overlay
+function toggleGrayOverlay(show) {
+  if (show) {
+    document.body.classList.add('active-overlay');
+  } else {
+    document.body.classList.remove('active-overlay');
+  }
 }
 
-// Call the function to add the gray overlay
-addGrayOverlay();
+// Example: Show the overlay when a search starts and hide when it ends
+function performSearch(query) {
+  // Show the gray overlay
+  toggleGrayOverlay(true);
 
-// Event listener to capture coordinates after a search is performed
+  // Perform search operations...
+  // Simulate search with a timeout
+  setTimeout(() => {
+    // After search completes, hide the overlay
+    toggleGrayOverlay(false);
+  }, 2000); // 2-second delay for demonstration
+}
+
+// Example: Trigger search on some event, e.g., form submission
+// Assume you have a search form with id 'searchForm'
+/*
+const searchForm = document.getElementById('searchForm');
+if (searchForm) {
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const query = e.target.elements['searchInput'].value;
+    performSearch(query);
+  });
+}
+*/
+
+// Event listener to capture coordinates after a search is performed or camera movement ends
 viewer.scene.camera.moveEnd.addEventListener(() => {
   const cartesian = viewer.camera.positionWC;
-  const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-  const longitude = Cesium.Math.toDegrees(cartographic.longitude);
-  const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+  const x = cartesian.x;
+  const y = cartesian.y;
+  const z = cartesian.z;
+
+  // Compute longitude, latitude, and height
+  const cartographic = Cartographic.fromCartesian(cartesian);
+  const longitude = CesiumMath.toDegrees(cartographic.longitude);
+  const latitude = CesiumMath.toDegrees(cartographic.latitude);
   const height = cartographic.height;
 
-  console.log(`Coordinates: Longitude: ${longitude}, Latitude: ${latitude}, Height: ${height}`);
+  console.log(`Coordinates: X: ${x}, Y: ${y}, Z: ${z}`);
 
   // Update the coordinates display
   const coordDisplay = document.getElementById('coordinatesDisplay');
   if (coordDisplay) {
-    coordDisplay.innerHTML = `Longitude: ${longitude.toFixed(6)}, Latitude: ${latitude.toFixed(6)}, Height: ${height.toFixed(2)} meters`;
+    coordDisplay.innerHTML = `
+      <strong>Cartesian Coordinates:</strong><br>
+      X: ${x.toFixed(3)}<br>
+      Y: ${y.toFixed(3)}<br>
+      Z: ${z.toFixed(3)}<br><br>
+      <strong>Geographic Coordinates:</strong><br>
+      Longitude: ${longitude.toFixed(6)}°<br>
+      Latitude: ${latitude.toFixed(6)}°<br>
+      Height: ${height.toFixed(2)} meters
+    `;
   }
 });
