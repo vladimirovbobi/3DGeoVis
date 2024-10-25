@@ -1,3 +1,5 @@
+// webpack.config.js
+
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -27,7 +29,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.css$/,
+        test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
       {
@@ -61,6 +63,10 @@ module.exports = {
     new webpack.DefinePlugin({
       CESIUM_BASE_URL: JSON.stringify(''),
     }),
+    // Polyfill for Buffer
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
   ],
   devServer: {
     static: {
@@ -70,8 +76,14 @@ module.exports = {
     port: 8080,
     hot: true,
     open: true,
+    historyApiFallback: true, // For client-side routing
   },
   performance: {  
     hints: false,
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    },
   },
 };
