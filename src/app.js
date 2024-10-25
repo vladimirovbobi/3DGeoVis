@@ -9,7 +9,12 @@ import {
   Cartographic,
   Math as CesiumMath,
 } from 'cesium';
+import 'cesium/Build/Cesium/Widgets/widgets.css'; // Import Cesium Widgets CSS
 import './css/main.css';
+import { Buffer } from 'buffer';
+
+// Make Buffer available globally
+window.Buffer = Buffer;
 
 // Set the Cesium Ion access token from environment variables
 Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
@@ -31,12 +36,12 @@ scene.verticalExaggeration = 3.0;
 // Set the initial camera view
 camera.setView({
   destination: new Cartesian3(
-    -2710292.813384663,
-    -4360657.061518585,
-    3793571.786860543
+    -2215372.824,
+    -3754338.187,
+    4642735.146
   ),
   orientation: {
-    heading: 5.794062761901799,
+    heading: 50.794062761901799,
     pitch: -0.30293409742984756,
     roll: 0.0009187098191985044,
   },
