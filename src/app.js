@@ -28,11 +28,11 @@ const viewer = new Viewer('cesiumContainer', {
   geocoder: true,
   homeButton: false,
 });
-
+    
 // Destructure scene and camera for convenience
 const { scene, camera } = viewer;
 scene.verticalExaggeration = 3.0;
-
+    
 // Set the initial camera view
 camera.setView({
   destination: new Cartesian3(
@@ -46,57 +46,84 @@ camera.setView({
     roll: 0.0009187098191985044,
   },
 });
-
+    
 // Enable rendering the sky
 scene.skyAtmosphere.show = true;
-
+    
 // Asynchronously add Photorealistic 3D Tileset
+const addPhotorealisticTileset = async () => {
+  try {
+    const tileset = await Cesium3DTileset.fromIonAssetId(2275207); // Photorealistic Tileset Asset ID
+    scene.primitives.add(tileset);
+    console.log('Photorealistic Tileset loaded successfully.');
+  } catch (error) {
+    console.error(`Error loading photorealistic 3D Tileset.\n${error}`);
+    // Optionally display an error message to the user
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.innerHTML = 'Failed to load photorealistic tileset.';
+    }
+  }
+};
+
+// Asynchronously add Building 3D Tileset
+const addBuildingTileset = async () => {
+  try {
+    const buildingTileset = await Cesium3DTileset.fromIonAssetId(2770811); // Building Tileset Asset ID
+    scene.primitives.add(buildingTileset);
+    console.log('Building Tileset loaded successfully.');
+  } catch (error) {
+    console.error(`Error loading building 3D Tileset.\n${error}`);
+    // Optionally display an error message to the user
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.innerHTML = 'Failed to load building tileset.';
+    }
+  }
+};
+
+// Load both tilesets and handle loading overlay
 (async () => {
   try {
-    const tileset = await Cesium3DTileset.fromIonAssetId(2275207); // Replace with your asset ID
-    scene.primitives.add(tileset);
-
-    // Hide the loading overlay once done
+    await Promise.all([addPhotorealisticTileset(), addBuildingTileset()]);
+    
+    // Hide the loading overlay once both tilesets are loaded
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
       loadingOverlay.style.display = 'none';
     }
-
+    
     // Optionally, show the gray overlay after loading
     // toggleGrayOverlay(true);
   } catch (error) {
-    console.error(`Error loading 3D Tileset.\n${error}`);
-    // Optionally display an error message to the user
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-      loadingOverlay.innerHTML = 'Failed to load tileset.';
-    }
+    console.error(`Error loading tilesets.\n${error}`);
+    // Handle any additional error scenarios here
   }
 })();
-
+    
 // ViewModel for toolbar controls
 const viewModel = {
   exaggeration: scene.verticalExaggeration,
   relativeHeight: scene.verticalExaggerationRelativeHeight || 0,
 };
-
+    
 function updateExaggeration() {
   scene.verticalExaggeration = Number(viewModel.exaggeration);
   scene.verticalExaggerationRelativeHeight = Number(viewModel.relativeHeight);
 }
-
+    
 // Apply knockout bindings
 knockout.track(viewModel);
 const toolbarElement = document.getElementById('toolbar');
 knockout.applyBindings(viewModel, toolbarElement);
-
+    
 // Subscribe to changes in the ViewModel
 for (const name in viewModel) {
   if (viewModel.hasOwnProperty(name)) {
     knockout.getObservable(viewModel, name).subscribe(updateExaggeration);
   }
 }
-
+    
 // Function to toggle the gray overlay
 function toggleGrayOverlay(show) {
   if (show) {
@@ -105,12 +132,12 @@ function toggleGrayOverlay(show) {
     document.body.classList.remove('active-overlay');
   }
 }
-
+    
 // Example: Show the overlay when a search starts and hide when it ends
 function performSearch(query) {
   // Show the gray overlay
   toggleGrayOverlay(true);
-
+    
   // Perform search operations...
   // Simulate search with a timeout
   setTimeout(() => {
@@ -118,7 +145,7 @@ function performSearch(query) {
     toggleGrayOverlay(false);
   }, 2000); // 2-second delay for demonstration
 }
-
+    
 // Example: Trigger search on some event, e.g., form submission
 // Assume you have a search form with id 'searchForm'
 /*
@@ -131,22 +158,22 @@ if (searchForm) {
   });
 }
 */
-
+    
 // Event listener to capture coordinates after a search is performed or camera movement ends
 viewer.scene.camera.moveEnd.addEventListener(() => {
   const cartesian = viewer.camera.positionWC;
   const x = cartesian.x;
   const y = cartesian.y;
   const z = cartesian.z;
-
+    
   // Compute longitude, latitude, and height
   const cartographic = Cartographic.fromCartesian(cartesian);
   const longitude = CesiumMath.toDegrees(cartographic.longitude);
   const latitude = CesiumMath.toDegrees(cartographic.latitude);
   const height = cartographic.height;
-
+    
   console.log(`Coordinates: X: ${x}, Y: ${y}, Z: ${z}`);
-
+    
   // Update the coordinates display
   const coordDisplay = document.getElementById('coordinatesDisplay');
   if (coordDisplay) {
