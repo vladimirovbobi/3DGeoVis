@@ -5,18 +5,19 @@ import {
   Cartesian3,
   Cesium3DTileset,
   Ion,
-  knockout,
   Cartographic,
   Math as CesiumMath,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
+  Color,
 } from 'cesium';
-import 'cesium/Build/Cesium/Widgets/widgets.css'; // Import Cesium Widgets CSS
+import 'cesium/Build/Cesium/Widgets/widgets.css';
 import './css/main.css';
 import { Buffer } from 'buffer';
 
-// Make Buffer available globally
 window.Buffer = Buffer;
 
-// Set the Cesium Ion access token from environment variables
+// Set Cesium Ion access token
 Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 
 // Initialize the Cesium Viewer
@@ -28,164 +29,162 @@ const viewer = new Viewer('cesiumContainer', {
   geocoder: true,
   homeButton: false,
 });
-    
-// Destructure scene and camera for convenience
+
+// Set up the Cesium scene and camera
 const { scene, camera } = viewer;
 scene.verticalExaggeration = 3.0;
-    
-// Set the initial camera view
 camera.setView({
-  destination: new Cartesian3(
-    -2215372.824,
-    -3754338.187,
-    4642735.146
-  ),
+  destination: new Cartesian3(-2215372.824, -3754338.187, 4642735.146),
   orientation: {
     heading: 50.794062761901799,
     pitch: -0.30293409742984756,
     roll: 0.0009187098191985044,
   },
 });
-    
-// Enable rendering the sky
+
 scene.skyAtmosphere.show = true;
-    
-// Asynchronously add Photorealistic 3D Tileset
-const addPhotorealisticTileset = async () => {
-  try {
-    const tileset = await Cesium3DTileset.fromIonAssetId(2275207); // Photorealistic Tileset Asset ID
-    scene.primitives.add(tileset);
-    console.log('Photorealistic Tileset loaded successfully.');
-  } catch (error) {
-    console.error(`Error loading photorealistic 3D Tileset.\n${error}`);
-    // Optionally display an error message to the user
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-      loadingOverlay.innerHTML = 'Failed to load photorealistic tileset.';
-    }
-  }
-};
 
-// Asynchronously add Building 3D Tileset
-const addBuildingTileset = async () => {
-  try {
-    const buildingTileset = await Cesium3DTileset.fromIonAssetId(2770811); // Building Tileset Asset ID
-    scene.primitives.add(buildingTileset);
-    console.log('Building Tileset loaded successfully.');
-  } catch (error) {
-    console.error(`Error loading building 3D Tileset.\n${error}`);
-    // Optionally display an error message to the user
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-      loadingOverlay.innerHTML = 'Failed to load building tileset.';
-    }
+// Function to show the iframe overlay
+function showIframe(url) {
+  const iframeOverlay = document.getElementById('iframeOverlay');
+  const infoIframe = document.getElementById('infoIframe');
+  if (iframeOverlay && infoIframe) {
+    infoIframe.src = url;
+    iframeOverlay.style.display = 'flex';
   }
-};
+}
 
-// Load both tilesets and handle loading overlay
-(async () => {
-  try {
-    await Promise.all([addPhotorealisticTileset(), addBuildingTileset()]);
-    
-    // Hide the loading overlay once both tilesets are loaded
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-      loadingOverlay.style.display = 'none';
+// Function to hide the iframe overlay and unselect the box
+function hideIframe() {
+  const iframeOverlay = document.getElementById('iframeOverlay');
+  const infoIframe = document.getElementById('infoIframe');
+  if (iframeOverlay && infoIframe) {
+    iframeOverlay.style.display = 'none';
+    infoIframe.src = '';
+    // Unselect any selected entity
+    viewer.selectedEntity = null;
+  }
+}
+
+// Close iframe button event listener
+const closeIframeButton = document.getElementById('closeIframe');
+if (closeIframeButton) {
+  closeIframeButton.addEventListener('click', hideIframe);
+}
+
+// Function to set up the real-time coordinate display
+function setupCoordinateDisplay() {
+  viewer.scene.camera.moveEnd.addEventListener(() => {
+    const cartesian = viewer.camera.positionWC;
+    const cartographic = Cartographic.fromCartesian(cartesian);
+    const longitude = CesiumMath.toDegrees(cartographic.longitude);
+    const latitude = CesiumMath.toDegrees(cartographic.latitude);
+    const height = cartographic.height;
+
+    const coordinatesDisplay = document.getElementById('coordinatesDisplay');
+    if (coordinatesDisplay) {
+      coordinatesDisplay.innerHTML = `
+        <strong>Cartesian Coordinates:</strong><br>
+        X: ${cartesian.x.toFixed(3)}<br>
+        Y: ${cartesian.y.toFixed(3)}<br>
+        Z: ${cartesian.z.toFixed(3)}<br><br>
+        <strong>Geographic Coordinates:</strong><br>
+        Longitude: ${longitude.toFixed(6)}°<br>
+        Latitude: ${latitude.toFixed(6)}°<br>
+        Height: ${height.toFixed(2)} meters
+      `;
     }
-    
-    // Optionally, show the gray overlay after loading
-    // toggleGrayOverlay(true);
-  } catch (error) {
-    console.error(`Error loading tilesets.\n${error}`);
-    // Handle any additional error scenarios here
-  }
-})();
-    
-// ViewModel for toolbar controls
-const viewModel = {
-  exaggeration: scene.verticalExaggeration,
-  relativeHeight: scene.verticalExaggerationRelativeHeight || 0,
-};
-    
-function updateExaggeration() {
-  scene.verticalExaggeration = Number(viewModel.exaggeration);
-  scene.verticalExaggerationRelativeHeight = Number(viewModel.relativeHeight);
-}
-    
-// Apply knockout bindings
-knockout.track(viewModel);
-const toolbarElement = document.getElementById('toolbar');
-knockout.applyBindings(viewModel, toolbarElement);
-    
-// Subscribe to changes in the ViewModel
-for (const name in viewModel) {
-  if (viewModel.hasOwnProperty(name)) {
-    knockout.getObservable(viewModel, name).subscribe(updateExaggeration);
-  }
-}
-    
-// Function to toggle the gray overlay
-function toggleGrayOverlay(show) {
-  if (show) {
-    document.body.classList.add('active-overlay');
-  } else {
-    document.body.classList.remove('active-overlay');
-  }
-}
-    
-// Example: Show the overlay when a search starts and hide when it ends
-function performSearch(query) {
-  // Show the gray overlay
-  toggleGrayOverlay(true);
-    
-  // Perform search operations...
-  // Simulate search with a timeout
-  setTimeout(() => {
-    // After search completes, hide the overlay
-    toggleGrayOverlay(false);
-  }, 2000); // 2-second delay for demonstration
-}
-    
-// Example: Trigger search on some event, e.g., form submission
-// Assume you have a search form with id 'searchForm'
-/*
-const searchForm = document.getElementById('searchForm');
-if (searchForm) {
-  searchForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const query = e.target.elements['searchInput'].value;
-    performSearch(query);
   });
 }
-*/
-    
-// Event listener to capture coordinates after a search is performed or camera movement ends
-viewer.scene.camera.moveEnd.addEventListener(() => {
-  const cartesian = viewer.camera.positionWC;
-  const x = cartesian.x;
-  const y = cartesian.y;
-  const z = cartesian.z;
-    
-  // Compute longitude, latitude, and height
-  const cartographic = Cartographic.fromCartesian(cartesian);
-  const longitude = CesiumMath.toDegrees(cartographic.longitude);
-  const latitude = CesiumMath.toDegrees(cartographic.latitude);
-  const height = cartographic.height;
-    
-  console.log(`Coordinates: X: ${x}, Y: ${y}, Z: ${z}`);
-    
-  // Update the coordinates display
-  const coordDisplay = document.getElementById('coordinatesDisplay');
-  if (coordDisplay) {
-    coordDisplay.innerHTML = `
-      <strong>Cartesian Coordinates:</strong><br>
-      X: ${x.toFixed(3)}<br>
-      Y: ${y.toFixed(3)}<br>
-      Z: ${z.toFixed(3)}<br><br>
-      <strong>Geographic Coordinates:</strong><br>
-      Longitude: ${longitude.toFixed(6)}°<br>
-      Latitude: ${latitude.toFixed(6)}°<br>
-      Height: ${height.toFixed(2)} meters
-    `;
+
+// Function to initialize a building and its clickable box
+/**
+ * Initializes a building by loading its tileset and creating a clickable box.
+ * @param {number} ionAssetId - The Cesium Ion asset ID for the 3D tileset.
+ * @param {Cartesian3} boxPosition - The position of the clickable box.
+ * @param {Cartesian3} boxDimensions - The dimensions of the clickable box.
+ * @param {string} iframeUrl - The URL to load in the iframe upon click.
+ */
+async function initializeBuilding(ionAssetId, boxPosition, boxDimensions, iframeUrl) {
+  try {
+    // Load the tileset from Cesium Ion
+    const tileset = await Cesium3DTileset.fromIonAssetId(ionAssetId);
+    scene.primitives.add(tileset);
+
+    // Optionally adjust tileset properties (e.g., modelMatrix, scale) here
+    // tileset.modelMatrix = ...;
+    // tileset.scale = ...;
+
+    // Create a clickable box entity
+    const clickableBox = viewer.entities.add({
+      position: boxPosition,
+      box: {
+        dimensions: boxDimensions,
+        material: Color.WHITE.withAlpha(0.01), // Invisible box
+        outline: false,
+        // Optionally add outline for visibility during setup
+        outlineColor: Color.WHITE.withAlpha(0.2),
+      },
+      show: true,
+    });
+
+    // Set up click handler for the box
+    const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction((click) => {
+      const pickedObject = viewer.scene.pick(click.position);
+      if (pickedObject && pickedObject.id === clickableBox) {
+        // Set the clicked box as the selected entity
+        viewer.selectedEntity = clickableBox;
+        // Open iframe on click
+        showIframe(iframeUrl); // Use the provided URL
+      }
+    }, ScreenSpaceEventType.LEFT_CLICK);
+
+    // Hide loading overlay if present
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+  } catch (error) {
+    console.error(`Error initializing building with Ion Asset ID ${ionAssetId}: ${error}`);
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.innerHTML = 'Failed to load tileset.';
   }
-});
+}
+
+// Function to load multiple buildings (optional)
+async function loadBuildings() {
+  // Example data for buildings
+  const buildings = [
+    {
+      ionAssetId: 2770811,
+      boxPosition: new Cartesian3(-2213992.200, -3753500.070, 4643615.175),
+      boxDimensions: new Cartesian3(100.0, 100.0, 2000.0),
+      iframeUrl: 'https://en.wikipedia.org/wiki/Ellensburg,_Washington', // Replace with your URL
+    },
+    {
+      ionAssetId: 2275207,
+    },
+  ];
+
+  // Show loading overlay before starting
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+  // Initialize each building
+  for (const building of buildings) {
+    await initializeBuilding(
+      building.ionAssetId,
+      building.boxPosition,
+      building.boxDimensions,
+      building.iframeUrl
+    );
+  }
+}
+
+// Initialize all functionalities
+async function initializeApp() {
+  await loadBuildings();
+  setupCoordinateDisplay();
+}
+
+// Start the application
+initializeApp();

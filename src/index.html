@@ -1,52 +1,25 @@
-<!-- src/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>3DGeoVis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Remove the direct link to Widgets/widgets.css -->
-  <!-- <link href="Widgets/widgets.css" rel="stylesheet"> -->
-  
-  <!-- Include your custom CSS -->
   <link href="css/main.css" rel="stylesheet">
-  
-  <style>
-    /* Additional styles can be added here if necessary */
-  </style>
 </head>
 <body>
   <!-- Cesium Container -->
   <div id="cesiumContainer" class="fullSize"></div>
-  
-  <!-- Gray Overlay -->
-  <div id="grayOverlay"></div>
-  
+
   <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading">
     <h1>Loading...</h1>
   </div>
-  
+
   <!-- Toolbar for Controls -->
   <div id="toolbar">
     <table>
       <tbody>
-        <tr>
-          <td><strong>Exaggeration</strong></td>
-          <td>
-            <input type="range" min="1" max="5" step="0.01" data-bind="value: exaggeration, valueUpdate: 'input'">
-            <input type="text" size="5" data-bind="value: exaggeration">
-          </td>
-        </tr>
-        <tr>
-          <td><strong>Relative Height</strong></td>
-          <td>
-            <input type="range" min="-1000" max="9000" step="1" data-bind="value: relativeHeight, valueUpdate: 'input'">
-            <input type="text" size="5" data-bind="value: relativeHeight">
-          </td>
-        </tr>
+
         <tr>
           <td><strong>Photorealistic Tileset</strong></td>
           <td>
@@ -62,7 +35,7 @@
       </tbody>
     </table>
   </div>
-  
+
   <!-- Coordinates Display -->
   <div id="coordinatesDisplay">
     <strong>Cartesian Coordinates:</strong><br>
@@ -75,6 +48,12 @@
     Height: N/A meters
   </div>
 
-  <!-- The bundled JavaScript file will be injected by HtmlWebpackPlugin -->
+  <!-- Iframe Overlay -->
+  <div id="iframeOverlay" class="iframe-overlay">
+    <div class="iframe-container">
+      <span id="closeIframe" class="close-button">&times;</span>
+      <iframe id="infoIframe" src="" frameborder="0"></iframe>
+    </div>
+  </div>
 </body>
 </html>
