@@ -10,10 +10,18 @@ import {
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   Color,
+  HeightReference,
+  VerticalOrigin,
+  Entity,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import './css/main.css';
 import { Buffer } from 'buffer';
+
+// Import your icon images
+import icon1 from './assets/icons/icon1.png';
+import icon2 from './assets/icons/icon2.png';
+
 
 window.Buffer = Buffer;
 
@@ -97,9 +105,9 @@ function setupCoordinateDisplay() {
   });
 }
 
-// Function to initialize a building and its clickable box
+// Function to initialize a building and its clickable box with icons
 /**
- * Initializes a building by loading its tileset and creating a clickable box.
+ * Initializes a building by loading its tileset and creating a clickable box with icons.
  * @param {number} ionAssetId - The Cesium Ion asset ID for the 3D tileset.
  * @param {Cartesian3} boxPosition - The position of the clickable box.
  * @param {Cartesian3} boxDimensions - The dimensions of the clickable box.
@@ -120,23 +128,63 @@ async function initializeBuilding(ionAssetId, boxPosition, boxDimensions, iframe
       position: boxPosition,
       box: {
         dimensions: boxDimensions,
-        material: Color.WHITE.withAlpha(0.01), // Invisible box
+        material: Color.WHITE.withAlpha(0.901), // Invisible box
         outline: false,
-        // Optionally add outline for visibility during setup
-        outlineColor: Color.WHITE.withAlpha(0.2),
       },
-      show: true,
+      properties: {
+        name: `Building ${ionAssetId}`,
+      },
     });
 
-    // Set up click handler for the box
+    // Define icon positions relative to the box - above the hitbox 
+    //take the difference between the coordinates of where we want it and the position of the box
+    const iconOffsets = [
+      new Cartesian3((-2214143.982)- boxPosition.x,
+                    (-3753795.455) - boxPosition.y ,
+                    (4643989.822)- boxPosition.z), // Center top
+    ];
+
+    // Array of icon image paths
+    const icons = [icon1, icon2]; // Add as many icons as needed
+
+    // Add billboard entities for each icon
+    const iconEntities = iconOffsets.map((offset, index) => {
+      return viewer.entities.add({
+        position: Cartesian3.add(boxPosition, offset, new Cartesian3()),
+        billboard: {
+          image: icons[index % icons.length], // Cycle through icons if more icons than offsets
+          verticalOrigin: VerticalOrigin.TOP,
+          heightReference: HeightReference.CLAMP_TO_3D_TILE,
+          scale: 0.1, // Adjust scale as needed
+          color: Color.WHITE.withAlpha(0.8),
+        },
+        properties: {
+          parentBox: clickableBox,
+          iconType: `icon${index + 1}`, // e.g., 'icon1', 'icon2', etc.
+        },
+      });
+    });
+
+    // Set up click handler for the box and its icons
     const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction((click) => {
       const pickedObject = viewer.scene.pick(click.position);
-      if (pickedObject && pickedObject.id === clickableBox) {
-        // Set the clicked box as the selected entity
-        viewer.selectedEntity = clickableBox;
-        // Open iframe on click
-        showIframe(iframeUrl); // Use the provided URL
+      if (pickedObject) {
+        if (pickedObject.id === clickableBox) {
+          viewer.selectedEntity = clickableBox;
+          showIframe(iframeUrl);
+        } else if (iconEntities.includes(pickedObject.id)) {
+          const iconType = pickedObject.id.properties.iconType.getValue();
+          // Perform different actions based on iconType
+          if (iconType === 'icon1') {
+            showIframe('https://example.com/icon1-info'); // Replace with your URL
+          } else if (iconType === 'icon2') {
+            showIframe('https://example.com/icon2-info'); // Replace with your URL
+          } else if (iconType === 'icon3') {
+            showIframe('https://example.com/icon3-info'); // Replace with your URL
+          }
+          // Add more conditions as needed
+        }
       }
     }, ScreenSpaceEventType.LEFT_CLICK);
 
@@ -150,19 +198,22 @@ async function initializeBuilding(ionAssetId, boxPosition, boxDimensions, iframe
   }
 }
 
-// Function to load multiple buildings (optional)
+// Function to load multiple buildings
 async function loadBuildings() {
+    // Load the 3Dtileset from Cesium Ion
+  const tileset = await Cesium3DTileset.fromIonAssetId(2275207);
+  scene.primitives.add(tileset);
+
   // Example data for buildings
   const buildings = [
+
     {
       ionAssetId: 2770811,
       boxPosition: new Cartesian3(-2213992.200, -3753500.070, 4643615.175),
-      boxDimensions: new Cartesian3(100.0, 100.0, 2000.0),
-      iframeUrl: 'https://en.wikipedia.org/wiki/Ellensburg,_Washington', // Replace with your URL
+      boxDimensions: new Cartesian3(100.0, 100.0, 670.0),
+      iframeUrl: 'https://my.matterport.com/show/?m=cJnnkSvYtEB', // Replace with your URL
     },
-    {
-      ionAssetId: 2275207,
-    },
+    // Add more buildings as needed
   ];
 
   // Show loading overlay before starting
